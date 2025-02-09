@@ -1,0 +1,7 @@
+{
+  "loglevel": "debug",
+
+  "mysql": {
+    "connection_string": "test:test@tcp(localhost:3306)/testdb?parseTime=true&interpolateParams=true"
+  }
+}

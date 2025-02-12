@@ -17,6 +17,8 @@ type Config struct {
 }
 
 func SetDefaults() {
+	viper.SetDefault("loglevel", "info")
+
 	viper.SetDefault("mysql.max_open_connections", 10)
 	viper.SetDefault("mysql.max_idle_connections", 10)
 	viper.SetDefault("mysql.connection_max_lifetime", time.Minute*5)

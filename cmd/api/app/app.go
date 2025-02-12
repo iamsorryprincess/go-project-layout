@@ -72,6 +72,8 @@ func (a *App) initDatabases() error {
 		return err
 	}
 
+	a.logger.Info().Msg("connected to mysql")
+
 	return nil
 }
 

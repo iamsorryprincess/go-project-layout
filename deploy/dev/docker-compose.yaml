@@ -1,0 +1,18 @@
+name: go-project-layout-dev-services
+
+services:
+  api:
+    build:
+      context: ../../.
+      dockerfile: cmd/api/Dockerfile
+    image: api
+    container_name: go-project-layout-dev-api
+    ports:
+      - "8080:8080"
+    networks:
+      - go-project-layout-dev-infrastructure-network
+
+networks:
+  go-project-layout-dev-infrastructure-network:
+    name: go-project-layout-dev-infrastructure-network
+    external: true

@@ -1,0 +1,23 @@
+name: go-project-layout-dev-infrastructure
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: go-project-layout-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=test
+      - MYSQL_PASSWORD=test
+      - MYSQL_DATABASE=testdb
+    ports:
+     - "3306:3306"
+    networks:
+      - go-project-layout-dev-infrastructure-network
+    volumes:
+      - ../../../../infrastructure/dev/volumes/mysql:/var/lib/mysql
+    command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
+
+networks:
+  go-project-layout-dev-infrastructure-network:
+    name: go-project-layout-dev-infrastructure-network
+    driver: bridge

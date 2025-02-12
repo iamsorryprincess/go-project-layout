@@ -17,6 +17,31 @@ services:
       - ../../../../infrastructure/dev/volumes/mysql:/var/lib/mysql
     command: [ 'mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci' ]
 
+  redis:
+    image: redis:8.0-M02
+    container_name: go-project-layout-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - go-project-layout-dev-infrastructure-network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:22.11.2
+    container_name: go-project-layout-clickhouse
+    environment:
+      - CLICKHOUSE_DB=testdb
+      - CLICKHOUSE_USER=test
+      - CLICKHOUSE_PASSWORD=test
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ports:
+      - "9000:9000"
+      - "8123:8123"
+    networks:
+      - go-project-layout-dev-infrastructure-network
+    volumes:
+      - ../../../../infrastructure/dev/volumes/clickhouse/data:/var/lib/clickhouse
+      - ../../../../infrastructure/dev/volumes/clickhouse/logs:/var/log/clickhouse-server
+
 networks:
   go-project-layout-dev-infrastructure-network:
     name: go-project-layout-dev-infrastructure-network

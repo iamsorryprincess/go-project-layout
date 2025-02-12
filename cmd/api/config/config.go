@@ -3,7 +3,9 @@ package config
 import (
 	"time"
 
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/clickhouse"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/mysql"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/redis"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
 	"github.com/spf13/viper"
 )
@@ -12,6 +14,10 @@ type Config struct {
 	LogLevel string `mapstructure:"loglevel"`
 
 	Mysql mysql.Config `mapstructure:"mysql"`
+
+	Redis redis.Config `mapstructure:"redis"`
+
+	Clickhouse clickhouse.Config `mapstructure:"clickhouse"`
 
 	HTTP http.Config `mapstructure:"http"`
 }

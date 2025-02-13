@@ -7,6 +7,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/mysql"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/redis"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
 	"github.com/spf13/viper"
 )
 
@@ -18,6 +19,8 @@ type Config struct {
 	Redis redis.Config `mapstructure:"redis"`
 
 	Clickhouse clickhouse.Config `mapstructure:"clickhouse"`
+
+	Nats nats.Config `mapstructure:"nats"`
 
 	HTTP http.Config `mapstructure:"http"`
 }

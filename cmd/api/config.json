@@ -26,5 +26,9 @@
     "max_idle_connection": 5,
     "max_execution_time": 60,
     "max_life_connection": "10m"
+  },
+
+  "nats": {
+    "url": "localhost:4222"
   }
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/redis"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
 )
 
 const serviceName = "api"
@@ -25,6 +26,8 @@ type App struct {
 	mysqlConn      *mysql.Connection
 	redisConn      *redis.Connection
 	clickhouseConn *clickhouse.Connection
+
+	natsConn *nats.Connection
 
 	httpServer *http.Server
 }
@@ -46,6 +49,10 @@ func (a *App) Run() {
 	}
 
 	if err := a.initDatabases(); err != nil {
+		return
+	}
+
+	if err := a.initNats(); err != nil {
 		return
 	}
 
@@ -96,6 +103,16 @@ func (a *App) initDatabases() error {
 	return nil
 }
 
+func (a *App) initNats() error {
+	a.config.Nats.Name = serviceName
+	var err error
+	if a.natsConn, err = nats.NewConnection(a.logger, a.config.Nats); err != nil {
+		a.logger.Error().Err(err).Msg("failed to connect to nats")
+		return err
+	}
+	return nil
+}
+
 func (a *App) initHTTP() {
 	handler := httpapp.NewHandler(a.logger)
 	a.httpServer = http.NewServer(a.logger, a.config.HTTP, handler)
@@ -105,6 +122,9 @@ func (a *App) initHTTP() {
 func (a *App) close() {
 	if a.httpServer != nil {
 		a.httpServer.Shutdown()
+	}
+	if a.natsConn != nil {
+		a.natsConn.Shutdown()
 	}
 	if a.mysqlConn != nil {
 		a.mysqlConn.Close()

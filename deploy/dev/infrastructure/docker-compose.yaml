@@ -42,6 +42,14 @@ services:
       - ../../../../infrastructure/dev/volumes/clickhouse/data:/var/lib/clickhouse
       - ../../../../infrastructure/dev/volumes/clickhouse/logs:/var/log/clickhouse-server
 
+  nats:
+    image: nats:2.10.25-alpine
+    container_name: go-project-layout-nats
+    ports:
+      - "4222:4222"
+    networks:
+      - go-project-layout-dev-infrastructure-network
+
 networks:
   go-project-layout-dev-infrastructure-network:
     name: go-project-layout-dev-infrastructure-network

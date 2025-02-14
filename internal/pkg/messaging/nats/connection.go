@@ -2,6 +2,7 @@ package nats
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 	"github.com/nats-io/nats.go"
@@ -53,13 +54,15 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 		}),
 	}
 
-	conn, err := nats.Connect(config.URL, options...)
+	url := strings.Join(config.Servers, ",")
+
+	conn, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, err
 	}
 
 	if !conn.IsConnected() {
-		return nil, fmt.Errorf("could not establish connection to %s", config.URL)
+		return nil, fmt.Errorf("could not establish connection to %s", url)
 	}
 
 	return &Connection{

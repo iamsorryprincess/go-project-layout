@@ -29,6 +29,8 @@
   },
 
   "nats": {
-    "url": "localhost:4222"
+    "servers": [
+      "localhost:4222"
+    ]
   }
 }

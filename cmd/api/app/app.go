@@ -110,6 +110,9 @@ func (a *App) initNats() error {
 		a.logger.Error().Err(err).Msg("failed to connect to nats")
 		return err
 	}
+
+	a.logger.Info().Msg("connected to nats")
+
 	return nil
 }
 

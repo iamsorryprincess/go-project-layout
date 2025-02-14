@@ -1,6 +1,8 @@
 package nats
 
 import (
+	"fmt"
+
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 	"github.com/nats-io/nats.go"
 )
@@ -17,12 +19,18 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(-1),
 
+		nats.ReconnectWait(nats.DefaultReconnectWait),
+		nats.ReconnectJitter(nats.DefaultReconnectJitter, nats.DefaultReconnectJitterTLS),
+		nats.Timeout(nats.DefaultTimeout),
+		nats.PingInterval(nats.DefaultPingInterval),
+		nats.MaxPingsOutstanding(nats.DefaultMaxPingOut),
+		nats.SyncQueueLen(nats.DefaultMaxChanLen),
+		nats.ReconnectBufSize(nats.DefaultReconnectBufSize),
+		nats.DrainTimeout(nats.DefaultDrainTimeout),
+		nats.FlusherTimeout(nats.DefaultFlusherTimeout),
+
 		nats.ReconnectHandler(func(_ *nats.Conn) {
 			logger.Info().Msg("reconnected to nats")
-		}),
-
-		nats.ConnectHandler(func(_ *nats.Conn) {
-			logger.Info().Msg("connected to nats")
 		}),
 
 		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
@@ -36,11 +44,22 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 		nats.ErrorHandler(func(_ *nats.Conn, subscription *nats.Subscription, err error) {
 			logger.Error().Err(err).Str("nats_subject", subscription.Subject).Msg("nats error")
 		}),
+
+		nats.DiscoveredServersHandler(func(conn *nats.Conn) {
+			logger.Info().
+				Interface("known", conn.Servers()).
+				Interface("discovered", conn.DiscoveredServers()).
+				Msg("nats servers")
+		}),
 	}
 
 	conn, err := nats.Connect(config.URL, options...)
 	if err != nil {
 		return nil, err
+	}
+
+	if !conn.IsConnected() {
+		return nil, fmt.Errorf("could not establish connection to %s", config.URL)
 	}
 
 	return &Connection{

@@ -54,6 +54,10 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 		}),
 	}
 
+	if config.User != "" && config.Password != "" {
+		options = append(options, nats.UserInfo(config.User, config.Password))
+	}
+
 	url := strings.Join(config.Servers, ",")
 
 	conn, err := nats.Connect(url, options...)

@@ -5,5 +5,9 @@ type Config struct {
 	// on CONNECT to identify the client.
 	Name string `mapstructure:"name"`
 
+	User string `mapstructure:"user"`
+
+	Password string `mapstructure:"password"`
+
 	Servers []string `mapstructure:"servers"`
 }

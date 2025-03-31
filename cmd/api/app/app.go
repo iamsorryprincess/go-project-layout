@@ -13,6 +13,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue"
 )
 
 const serviceName = "api"
@@ -28,6 +29,8 @@ type App struct {
 	clickhouseConn *clickhouse.Connection
 
 	natsConn *nats.Connection
+
+	testQueue *queue.MemoryBatchQueue[int]
 
 	httpServer *http.Server
 }
@@ -55,6 +58,8 @@ func (a *App) Run() {
 	if err := a.initNats(); err != nil {
 		return
 	}
+
+	a.initServices()
 
 	a.initHTTP()
 
@@ -116,6 +121,10 @@ func (a *App) initNats() error {
 	return nil
 }
 
+func (a *App) initServices() {
+	a.testQueue = queue.NewMemoryBatchQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
+}
+
 func (a *App) initHTTP() {
 	handler := httpapp.NewHandler(a.logger)
 	a.httpServer = http.NewServer(a.logger, a.config.HTTP, handler)
@@ -125,6 +134,9 @@ func (a *App) initHTTP() {
 func (a *App) close() {
 	if a.httpServer != nil {
 		a.httpServer.Shutdown()
+	}
+	if a.testQueue != nil {
+		a.testQueue.Stop()
 	}
 	if a.natsConn != nil {
 		a.natsConn.Shutdown()

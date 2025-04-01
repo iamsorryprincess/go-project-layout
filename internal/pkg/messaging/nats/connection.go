@@ -35,11 +35,9 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 		}),
 
 		nats.DisconnectErrHandler(func(_ *nats.Conn, err error) {
-			logger.Error().Err(err).Msg("nats disconnected")
-		}),
-
-		nats.ClosedHandler(func(_ *nats.Conn) {
-			logger.Error().Msg("nats connection closed")
+			if err != nil {
+				logger.Error().Err(err).Msg("nats disconnected")
+			}
 		}),
 
 		nats.ErrorHandler(func(_ *nats.Conn, subscription *nats.Subscription, err error) {

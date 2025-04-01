@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"time"
 
 	"github.com/iamsorryprincess/go-project-layout/cmd/api/config"
 	httpapp "github.com/iamsorryprincess/go-project-layout/cmd/api/http"
@@ -31,6 +32,8 @@ type App struct {
 	natsConn *nats.Connection
 
 	testQueue *memory.Queue[int]
+
+	worker *background.Worker
 
 	httpServer *http.Server
 }
@@ -123,6 +126,11 @@ func (a *App) initNats() error {
 
 func (a *App) initServices() {
 	a.testQueue = memory.NewQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
+	a.worker = background.NewWorker(a.logger)
+
+	a.worker.RunWithInterval(a.ctx, "test", time.Second, func(_ context.Context) error {
+		return nil
+	})
 }
 
 func (a *App) initHTTP() {
@@ -134,6 +142,9 @@ func (a *App) initHTTP() {
 func (a *App) close() {
 	if a.httpServer != nil {
 		a.httpServer.Shutdown()
+	}
+	if a.worker != nil {
+		a.worker.Wait()
 	}
 	if a.testQueue != nil {
 		a.testQueue.Close()

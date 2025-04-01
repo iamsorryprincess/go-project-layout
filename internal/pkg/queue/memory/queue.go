@@ -1,4 +1,4 @@
-package queue
+package memory
 
 import (
 	"context"
@@ -8,22 +8,11 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 )
 
-type MemoryBatchQueueConfig struct {
-	Name         string `mapstructure:"name"`
-	WorkersCount int    `mapstructure:"workers_count"`
-
-	BatchSize  int `mapstructure:"batch_size"`
-	BufferSize int `mapstructure:"buffer_size"`
-
-	HandleInterval time.Duration `mapstructure:"handle_interval"`
-}
-
 type BatchHandler[T any] interface {
 	Handle(ctx context.Context, batch []T) error
 }
 
-type MemoryBatchQueue[T any] struct {
-	ctx    context.Context
+type Queue[T any] struct {
 	logger log.Logger
 
 	name string
@@ -34,13 +23,12 @@ type MemoryBatchQueue[T any] struct {
 	handler BatchHandler[T]
 }
 
-func NewMemoryBatchQueue[T any](ctx context.Context, logger log.Logger, config MemoryBatchQueueConfig, handler BatchHandler[T]) *MemoryBatchQueue[T] {
+func NewQueue[T any](ctx context.Context, logger log.Logger, config Config, handler BatchHandler[T]) *Queue[T] {
 	if config.BufferSize <= 0 {
 		config.BufferSize = 1
 	}
 
-	queue := &MemoryBatchQueue[T]{
-		ctx:     context.Background(),
+	queue := &Queue[T]{
 		logger:  logger,
 		name:    config.Name,
 		ch:      make(chan T, config.BufferSize),
@@ -49,7 +37,7 @@ func NewMemoryBatchQueue[T any](ctx context.Context, logger log.Logger, config M
 
 	for i := 0; i < config.WorkersCount; i++ {
 		queue.wg.Add(1)
-		go func(ctx context.Context, workerID int, queue *MemoryBatchQueue[T]) {
+		go func(ctx context.Context, workerID int, queue *Queue[T]) {
 			defer queue.wg.Done()
 
 			timer := time.NewTimer(config.HandleInterval)
@@ -60,24 +48,24 @@ func NewMemoryBatchQueue[T any](ctx context.Context, logger log.Logger, config M
 				case message, ok := <-queue.ch:
 					if !ok {
 						timer.Stop()
-						queue.drainMessages(workerID, batch)
+						queue.drainMessages(ctx, workerID, batch)
 						return
 					}
 					batch = append(batch, message)
 					if len(batch) >= config.BatchSize {
-						queue.processMessages(workerID, batch)
+						queue.processMessages(ctx, workerID, batch)
 						batch = batch[:0]
 						timer.Reset(config.HandleInterval)
 					}
 				case <-timer.C:
 					if len(batch) > 0 {
-						queue.processMessages(workerID, batch)
+						queue.processMessages(ctx, workerID, batch)
 						batch = batch[:0]
 					}
 					timer.Reset(config.HandleInterval)
 				case <-ctx.Done():
 					timer.Stop()
-					queue.drainMessages(workerID, batch)
+					queue.drainMessages(ctx, workerID, batch)
 					return
 				}
 			}
@@ -87,19 +75,19 @@ func NewMemoryBatchQueue[T any](ctx context.Context, logger log.Logger, config M
 	return queue
 }
 
-func (q *MemoryBatchQueue[T]) Push(message T) error {
+func (q *Queue[T]) Push(message T) error {
 	q.ch <- message
 	return nil
 }
 
-func (q *MemoryBatchQueue[T]) Stop() {
+func (q *Queue[T]) Close() {
 	close(q.ch)
 	q.wg.Wait()
-	q.logger.Info().Str("queue", q.name).Msg("memory batch queue stopped")
+	q.logger.Info().Str("queue", q.name).Msg("memory batch queue closed")
 }
 
-func (q *MemoryBatchQueue[T]) processMessages(workerID int, batch []T) {
-	if err := q.handler.Handle(q.ctx, batch); err != nil {
+func (q *Queue[T]) processMessages(ctx context.Context, workerID int, messages []T) {
+	if err := q.handler.Handle(ctx, messages); err != nil {
 		q.logger.Error().
 			Str("queue", q.name).
 			Int("worker", workerID).
@@ -108,9 +96,9 @@ func (q *MemoryBatchQueue[T]) processMessages(workerID int, batch []T) {
 	}
 }
 
-func (q *MemoryBatchQueue[T]) drainMessages(workerID int, batch []T) {
-	if len(batch) > 0 {
-		q.processMessages(workerID, batch)
+func (q *Queue[T]) drainMessages(ctx context.Context, workerID int, messages []T) {
+	if len(messages) > 0 {
+		q.processMessages(ctx, workerID, messages)
 	}
 
 	drainedMessages := make([]T, 0, len(q.ch))
@@ -119,6 +107,6 @@ func (q *MemoryBatchQueue[T]) drainMessages(workerID int, batch []T) {
 	}
 
 	if len(drainedMessages) > 0 {
-		q.processMessages(workerID, drainedMessages)
+		q.processMessages(ctx, workerID, drainedMessages)
 	}
 }

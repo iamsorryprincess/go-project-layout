@@ -8,7 +8,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/redis"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
-	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/memory"
 	"github.com/spf13/viper"
 )
 
@@ -25,7 +25,7 @@ type Config struct {
 
 	HTTP http.Config `mapstructure:"http"`
 
-	TestQueue queue.MemoryBatchQueueConfig `mapstructure:"test_queue"`
+	TestQueue memory.Config `mapstructure:"test_queue"`
 }
 
 func SetDefaults() {

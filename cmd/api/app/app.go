@@ -13,7 +13,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
-	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/memory"
 )
 
 const serviceName = "api"
@@ -30,7 +30,7 @@ type App struct {
 
 	natsConn *nats.Connection
 
-	testQueue *queue.MemoryBatchQueue[int]
+	testQueue *memory.Queue[int]
 
 	httpServer *http.Server
 }
@@ -122,7 +122,7 @@ func (a *App) initNats() error {
 }
 
 func (a *App) initServices() {
-	a.testQueue = queue.NewMemoryBatchQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
+	a.testQueue = memory.NewQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
 }
 
 func (a *App) initHTTP() {
@@ -136,7 +136,7 @@ func (a *App) close() {
 		a.httpServer.Shutdown()
 	}
 	if a.testQueue != nil {
-		a.testQueue.Stop()
+		a.testQueue.Close()
 	}
 	if a.natsConn != nil {
 		a.natsConn.Shutdown()

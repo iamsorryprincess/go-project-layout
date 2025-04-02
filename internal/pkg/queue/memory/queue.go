@@ -6,11 +6,8 @@ import (
 	"time"
 
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
+	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue"
 )
-
-type BatchHandler[T any] interface {
-	Handle(ctx context.Context, batch []T) error
-}
 
 type Queue[T any] struct {
 	logger log.Logger
@@ -20,15 +17,15 @@ type Queue[T any] struct {
 	ch chan T
 	wg sync.WaitGroup
 
-	handler BatchHandler[T]
+	handler queue.BatchHandler[T]
 }
 
-func NewQueue[T any](ctx context.Context, logger log.Logger, config Config, handler BatchHandler[T]) *Queue[T] {
+func NewQueue[T any](ctx context.Context, logger log.Logger, config Config, handler queue.BatchHandler[T]) *Queue[T] {
 	if config.BufferSize <= 0 {
 		config.BufferSize = 1
 	}
 
-	queue := &Queue[T]{
+	q := &Queue[T]{
 		logger:  logger,
 		name:    config.Name,
 		ch:      make(chan T, config.BufferSize),
@@ -36,7 +33,7 @@ func NewQueue[T any](ctx context.Context, logger log.Logger, config Config, hand
 	}
 
 	for i := 0; i < config.WorkersCount; i++ {
-		queue.wg.Add(1)
+		q.wg.Add(1)
 		go func(ctx context.Context, workerID int, queue *Queue[T]) {
 			defer queue.wg.Done()
 
@@ -69,10 +66,10 @@ func NewQueue[T any](ctx context.Context, logger log.Logger, config Config, hand
 					return
 				}
 			}
-		}(ctx, i, queue)
+		}(ctx, i, q)
 	}
 
-	return queue
+	return q
 }
 
 func (q *Queue[T]) Push(message T) error {

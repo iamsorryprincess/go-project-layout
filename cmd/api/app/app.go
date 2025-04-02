@@ -6,6 +6,8 @@ import (
 
 	"github.com/iamsorryprincess/go-project-layout/cmd/api/config"
 	httpapp "github.com/iamsorryprincess/go-project-layout/cmd/api/http"
+	"github.com/iamsorryprincess/go-project-layout/cmd/api/model"
+	"github.com/iamsorryprincess/go-project-layout/cmd/api/service"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/background"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/configutils"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/clickhouse"
@@ -15,6 +17,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/memory"
+	queueredis "github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/redis"
 )
 
 const serviceName = "api"
@@ -32,6 +35,10 @@ type App struct {
 	natsConn *nats.Connection
 
 	testQueue *memory.Queue[int]
+
+	userService *service.UserService
+
+	testConsumer *queueredis.Consumer[model.User]
 
 	worker *background.Worker
 
@@ -126,11 +133,13 @@ func (a *App) initNats() error {
 
 func (a *App) initServices() {
 	a.testQueue = memory.NewQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
-	a.worker = background.NewWorker(a.logger)
 
-	a.worker.RunWithInterval(a.ctx, "test", time.Second, func(_ context.Context) error {
-		return nil
-	})
+	a.userService = service.NewUserService(a.logger)
+
+	a.testConsumer = queueredis.NewConsumer[model.User](a.logger, "test", 10, a.redisConn, a.userService)
+
+	a.worker = background.NewWorker(a.logger)
+	a.worker.RunWithInterval(a.ctx, "test", time.Second, a.testConsumer.Consume)
 }
 
 func (a *App) initHTTP() {

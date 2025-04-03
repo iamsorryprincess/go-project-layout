@@ -9,6 +9,7 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/cmd/api/model"
 	"github.com/iamsorryprincess/go-project-layout/cmd/api/service"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/background"
+	memorycache "github.com/iamsorryprincess/go-project-layout/internal/pkg/cache/memory"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/configutils"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/clickhouse"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/database/mysql"
@@ -16,8 +17,8 @@ import (
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/http"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/messaging/nats"
-	"github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/memory"
-	queueredis "github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/redis"
+	memoryqueue "github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/memory"
+	redisqueue "github.com/iamsorryprincess/go-project-layout/internal/pkg/queue/redis"
 )
 
 const serviceName = "api"
@@ -31,14 +32,15 @@ type App struct {
 	mysqlConn      *mysql.Connection
 	redisConn      *redis.Connection
 	clickhouseConn *clickhouse.Connection
+	natsConn       *nats.Connection
 
-	natsConn *nats.Connection
+	testCache *memorycache.Cache[string, int]
 
-	testQueue *memory.Queue[int]
+	testQueue *memoryqueue.Queue[int]
 
 	userService *service.UserService
 
-	testConsumer *queueredis.Consumer[model.User]
+	testConsumer *redisqueue.Consumer[model.User]
 
 	worker *background.Worker
 
@@ -132,11 +134,17 @@ func (a *App) initNats() error {
 }
 
 func (a *App) initServices() {
-	a.testQueue = memory.NewQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
+	a.testCache = memorycache.NewCache[string, int](a.ctx, memorycache.Config{
+		ClearInterval: time.Second,
+	})
+
+	_ = a.testCache.Set(a.ctx, "test", time.Millisecond*300, 1)
+
+	a.testQueue = memoryqueue.NewQueue[int](a.ctx, a.logger, a.config.TestQueue, nil)
 
 	a.userService = service.NewUserService(a.logger)
 
-	a.testConsumer = queueredis.NewConsumer[model.User](a.logger, "test", 10, a.redisConn, a.userService)
+	a.testConsumer = redisqueue.NewConsumer[model.User](a.logger, "test", 10, a.redisConn, a.userService)
 
 	a.worker = background.NewWorker(a.logger)
 	a.worker.RunWithInterval(a.ctx, "test", time.Second, a.testConsumer.Consume)
@@ -157,6 +165,9 @@ func (a *App) close() {
 	}
 	if a.testQueue != nil {
 		a.testQueue.Close()
+	}
+	if a.testCache != nil {
+		a.testCache.Wait()
 	}
 	if a.natsConn != nil {
 		a.natsConn.Shutdown()

@@ -15,3 +15,5 @@
 *.out
 
 *.sql
+
+__debug_bin*

@@ -14,14 +14,14 @@ redis:
 clickhouse:
   hosts:
     - "localhost:9000"
-  database": "testdb"
-  user": "test"
-  password": "test"
-  dial_timeout": "1s"
-  max_open_connection": 5
-  max_idle_connection": 5
-  max_execution_time": 60
-  max_life_connection": "10m"
+  database: "testdb"
+  user: "test"
+  password: "test"
+  dial_timeout: "1s"
+  max_open_connection: 5
+  max_idle_connection: 5
+  max_execution_time: 60
+  max_life_connection: "10m"
 
 nats:
   servers:

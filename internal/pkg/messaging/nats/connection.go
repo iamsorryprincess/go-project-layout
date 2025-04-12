@@ -1,7 +1,6 @@
 package nats
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/iamsorryprincess/go-project-layout/internal/pkg/log"
@@ -63,10 +62,6 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 		return nil, err
 	}
 
-	if !conn.IsConnected() {
-		return nil, fmt.Errorf("could not establish connection to %s", url)
-	}
-
 	return &Connection{
 		logger: logger,
 		Conn:   conn,
@@ -74,7 +69,7 @@ func NewConnection(logger log.Logger, config Config) (*Connection, error) {
 }
 
 func (c *Connection) Shutdown() {
-	if err := c.Conn.Drain(); err != nil {
+	if err := c.Drain(); err != nil {
 		c.logger.Error().Err(err).Msg("nats drain error")
 	}
 }

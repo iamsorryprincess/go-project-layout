@@ -10,7 +10,7 @@ import (
 type SetDefaultsFunc func()
 
 func Parse[TConfig any](defaultsFunc SetDefaultsFunc, path ...string) (TConfig, error) {
-	configPath := flag.String("c", "config.json", "path to config file")
+	configPath := flag.String("c", "config.yaml", "path to config file")
 	flag.Parse()
 
 	if len(path) > 0 {
@@ -19,7 +19,7 @@ func Parse[TConfig any](defaultsFunc SetDefaultsFunc, path ...string) (TConfig, 
 	}
 
 	viper.SetConfigFile(*configPath)
-	viper.SetConfigType("json")
+	viper.SetConfigType("yaml")
 
 	var cfg TConfig
 

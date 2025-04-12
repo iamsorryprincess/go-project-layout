@@ -1,5 +1,5 @@
 lint:
-	golangci-lint run ./... -c .golangci.yaml
+	~/go/bin/golangci-lint run ./... -c .golangci.yaml
 
 # Dev
 # Backend dev dir

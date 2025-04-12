@@ -144,7 +144,7 @@ func (a *App) initServices() {
 
 	a.userService = service.NewUserService(a.logger)
 
-	a.testConsumer = redisqueue.NewConsumer[model.User](a.logger, "test", 10, a.redisConn, a.userService)
+	a.testConsumer = redisqueue.NewConsumer(a.logger, "test", 10, a.redisConn, a.userService)
 
 	a.worker = background.NewWorker(a.logger)
 	a.worker.RunWithInterval(a.ctx, "test", time.Second, a.testConsumer.Consume)

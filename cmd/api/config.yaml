@@ -1,0 +1,36 @@
+loglevel: "debug"
+
+mysql:
+  connection_string: "test:test@tcp(localhost:3306)/testdb?parseTime=true&interpolateParams=true"
+  max_open_connections: 5
+  max_idle_connections: 5
+  connection_max_lifetime: "10m"
+  connection_max_idle_time: "10m"
+
+redis:
+  host: "localhost"
+  port: 6379
+
+clickhouse:
+  hosts:
+    - "localhost:9000"
+  database": "testdb"
+  user": "test"
+  password": "test"
+  dial_timeout": "1s"
+  max_open_connection": 5
+  max_idle_connection": 5
+  max_execution_time": 60
+  max_life_connection": "10m"
+
+nats:
+  servers:
+    - "localhost:4222"
+
+http:
+  port: 8080
+  read_timeout: "5s"
+  read_header_timeout: "2s"
+  write_timeout: "10s"
+  idle_timeout: "30s"
+  max_header_bytes: 1048576
